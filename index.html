@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>LINE予約</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --line: #06c755;
+      --line-dark: #04a947;
+      --ink: #101714;
+      --sub: #66726d;
+      --weak: #8b9691;
+      --bg: #eef3f0;
+      --paper: #ffffff;
+      --soft: #f6f8f7;
+      --soft-green: #e8f8ef;
+      --border: #dbe5df;
+      --border-strong: #bfd0c7;
+      --danger: #b74b55;
+      --danger-bg: #fff0f1;
+      --amber: #b36a1d;
+      --amber-bg: #fff4e6;
+      --radius: 8px;
+      --shadow: 0 18px 46px rgba(17, 35, 27, 0.13);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      min-height: 100%;
+      margin: 0;
+    }
+
+    body {
+      font-family: "Noto Sans JP", "Yu Gothic", "Meiryo", sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      letter-spacing: 0;
+    }
+
+    button,
+    input,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+    }
+
+    .phone {
+      width: min(100%, 430px);
+      min-height: 100vh;
+      margin: 0 auto;
+      background: var(--paper);
+      box-shadow: var(--shadow);
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+      padding: 0 16px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.96);
+    }
+
+    .topbar__title {
+      min-width: 0;
+    }
+
+    .topbar__title strong {
+      display: block;
+      overflow: hidden;
+      color: var(--ink);
+      font-size: 16px;
+      font-weight: 800;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .topbar__title span {
+      display: block;
+      margin-top: 1px;
+      color: var(--weak);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .topbar__close {
+      display: grid;
+      flex: 0 0 34px;
+      width: 34px;
+      height: 34px;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--soft);
+      color: var(--sub);
+    }
+
+    .topbar__close svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .screen {
+      display: none;
+      min-height: calc(100vh - 56px);
+      background: var(--bg);
+    }
+
+    .screen.is-active {
+      display: block;
+    }
+
+    .content {
+      padding: 14px 14px 104px;
+    }
+
+    .hero {
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--paper);
+    }
+
+    .hero__visual {
+      position: relative;
+      min-height: 172px;
+      padding: 20px;
+      background:
+        linear-gradient(140deg, rgba(6, 199, 85, 0.92), rgba(13, 129, 85, 0.86)),
+        url("salon_logo.png") center / 72% auto no-repeat;
+      color: #fff;
+    }
+
+    .hero__visual::after {
+      position: absolute;
+      inset: auto 18px 18px auto;
+      width: 118px;
+      height: 118px;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      border-radius: 50%;
+      content: "";
+    }
+
+    .hero__tag {
+      position: relative;
+      z-index: 1;
+      display: inline-flex;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.18);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .hero h1 {
+      position: relative;
+      z-index: 1;
+      max-width: 286px;
+      margin: 22px 0 0;
+      font-size: 29px;
+      line-height: 1.28;
+      letter-spacing: 0;
+    }
+
+    .hero__lead {
+      position: relative;
+      z-index: 1;
+      max-width: 292px;
+      margin: 12px 0 0;
+      color: rgba(255, 255, 255, 0.92);
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.7;
+    }
+
+    .hero__body {
+      padding: 18px;
+    }
+
+    .service-card {
+      display: grid;
+      gap: 12px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .service-card li {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 13px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .service-card li:last-child {
+      border-bottom: 0;
+    }
+
+    .service-card span {
+      color: var(--sub);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .service-card strong {
+      color: var(--ink);
+      font-size: 15px;
+      font-weight: 800;
+      text-align: right;
+    }
+
+    .fixed-action {
+      position: fixed;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      z-index: 4;
+      width: min(100%, 430px);
+      margin: 0 auto;
+      padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
+      border-top: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.98);
+    }
+
+    .primary,
+    .secondary,
+    .text-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      min-height: 50px;
+      border-radius: var(--radius);
+      font-weight: 800;
+      letter-spacing: 0;
+    }
+
+    .primary {
+      background: var(--line);
+      color: #fff;
+    }
+
+    .primary:active {
+      background: var(--line-dark);
+    }
+
+    .secondary {
+      border: 1px solid var(--border-strong);
+      background: var(--paper);
+      color: var(--ink);
+    }
+
+    .text-button {
+      width: auto;
+      min-height: 36px;
+      padding: 0 4px;
+      background: transparent;
+      color: var(--sub);
+      font-size: 14px;
+    }
+
+    .step {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      padding: 12px 2px 16px;
+    }
+
+    .step__item {
+      display: grid;
+      gap: 6px;
+      justify-items: center;
+      color: var(--weak);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .step__dot {
+      display: grid;
+      width: 28px;
+      height: 28px;
+      place-items: center;
+      border: 1px solid var(--border-strong);
+      border-radius: 50%;
+      background: var(--paper);
+      color: inherit;
+      font-size: 12px;
+    }
+
+    .step__item.is-current,
+    .step__item.is-done {
+      color: var(--line-dark);
+    }
+
+    .step__item.is-current .step__dot,
+    .step__item.is-done .step__dot {
+      border-color: var(--line);
+      background: var(--line);
+      color: #fff;
+    }
+
+    .page-title {
+      margin: 2px 0 14px;
+      font-size: 24px;
+      line-height: 1.35;
+      letter-spacing: 0;
+    }
+
+    .loading {
+      display: grid;
+      min-height: calc(100vh - 56px);
+      place-items: center;
+      padding: 28px;
+      text-align: center;
+    }
+
+    .spinner {
+      width: 58px;
+      height: 58px;
+      margin: 0 auto 18px;
+      border: 4px solid #dff4e8;
+      border-top-color: var(--line);
+      border-radius: 50%;
+      animation: spin 0.82s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .loading h2 {
+      margin: 0;
+      font-size: 21px;
+      letter-spacing: 0;
+    }
+
+    .loading p {
+      margin: 8px 0 0;
+      color: var(--sub);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .notice {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 12px;
+      padding: 10px 12px;
+      border: 1px solid #f0d2a5;
+      border-radius: var(--radius);
+      background: var(--amber-bg);
+      color: var(--amber);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .week-nav {
+      display: grid;
+      grid-template-columns: 82px 1fr 82px;
+      gap: 8px;
+      align-items: center;
+      margin: 0 0 12px;
+    }
+
+    .week-nav__button {
+      min-height: 38px;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius);
+      background: var(--paper);
+      color: var(--ink);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .week-nav__button:disabled {
+      border-color: var(--border);
+      background: #f3f6f4;
+      color: var(--weak);
+    }
+
+    .week-nav__range {
+      min-width: 0;
+      color: var(--ink);
+      font-size: 14px;
+      font-weight: 800;
+      line-height: 1.35;
+      text-align: center;
+    }
+
+    .availability-card {
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--paper);
+    }
+
+    .availability-card__head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 13px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .availability-card__head strong {
+      display: block;
+      font-size: 15px;
+      font-weight: 800;
+    }
+
+    .availability-card__head span {
+      display: block;
+      margin-top: 4px;
+      color: var(--sub);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .availability-legend {
+      flex: 0 0 auto;
+      color: var(--sub);
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1.7;
+      text-align: right;
+    }
+
+    .availability-grid {
+      display: grid;
+      grid-template-columns: 49px repeat(7, minmax(37px, 1fr));
+      width: 100%;
+    }
+
+    .availability-cell {
+      display: grid;
+      place-items: center;
+      min-height: 43px;
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      background: var(--paper);
+      color: var(--ink);
+      text-align: center;
+    }
+
+    .availability-cell:nth-child(8n) {
+      border-right: 0;
+    }
+
+    .availability-cell.is-head {
+      min-height: 54px;
+      background: var(--soft);
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1.35;
+    }
+
+    .availability-cell.is-head span {
+      display: block;
+    }
+
+    .availability-cell.is-head small {
+      color: var(--sub);
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .availability-cell.is-time {
+      background: var(--soft);
+      color: var(--sub);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .availability-button {
+      width: 100%;
+      height: 100%;
+      min-height: 43px;
+      background: transparent;
+      color: var(--line-dark);
+      font-size: 21px;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .availability-button.is-open:active {
+      background: var(--soft-green);
+    }
+
+    .availability-button.is-booked {
+      color: var(--weak);
+    }
+
+    .availability-button:disabled {
+      background: #f7f8f7;
+    }
+
+    .form-card,
+    .complete-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--paper);
+    }
+
+    .selected {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--soft-green);
+    }
+
+    .selected span {
+      display: block;
+      color: var(--sub);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .selected strong {
+      display: block;
+      margin-top: 4px;
+      font-size: 16px;
+      font-weight: 800;
+      line-height: 1.45;
+    }
+
+    .fields {
+      display: grid;
+      gap: 14px;
+      padding: 16px;
+    }
+
+    .field {
+      display: grid;
+      gap: 7px;
+    }
+
+    .field label {
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .field input,
+    .field textarea {
+      width: 100%;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius);
+      background: #fff;
+      color: var(--ink);
+      outline: 0;
+    }
+
+    .field input {
+      height: 48px;
+      padding: 0 13px;
+    }
+
+    .field textarea {
+      min-height: 86px;
+      padding: 12px 13px;
+      resize: vertical;
+    }
+
+    .field input:focus,
+    .field textarea:focus {
+      border-color: var(--line);
+      box-shadow: 0 0 0 4px rgba(6, 199, 85, 0.13);
+    }
+
+    .confirming {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      margin: 0 16px 16px;
+      padding: 11px 12px;
+      border-radius: var(--radius);
+      background: var(--soft);
+      color: var(--sub);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .confirming.is-visible {
+      display: flex;
+    }
+
+    .mini-spinner {
+      width: 18px;
+      height: 18px;
+      border: 3px solid #dff4e8;
+      border-top-color: var(--line);
+      border-radius: 50%;
+      animation: spin 0.82s linear infinite;
+    }
+
+    .complete-card {
+      padding: 28px 18px 20px;
+      text-align: center;
+    }
+
+    .complete-mark {
+      display: grid;
+      width: 72px;
+      height: 72px;
+      place-items: center;
+      margin: 0 auto 18px;
+      border-radius: 50%;
+      background: var(--soft-green);
+      color: var(--line-dark);
+    }
+
+    .complete-mark svg {
+      width: 38px;
+      height: 38px;
+    }
+
+    .complete-card h2 {
+      margin: 0;
+      font-size: 24px;
+      letter-spacing: 0;
+    }
+
+    .complete-summary {
+      display: grid;
+      gap: 10px;
+      margin: 22px 0 0;
+      padding: 14px;
+      border-radius: var(--radius);
+      background: var(--soft);
+      text-align: left;
+    }
+
+    .complete-summary div {
+      display: grid;
+      grid-template-columns: 76px 1fr;
+      gap: 10px;
+      align-items: start;
+    }
+
+    .complete-summary dt {
+      color: var(--sub);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .complete-summary dd {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 800;
+      line-height: 1.5;
+      word-break: break-word;
+    }
+
+    .toast {
+      position: fixed;
+      right: 14px;
+      bottom: 86px;
+      left: 14px;
+      z-index: 8;
+      width: min(calc(100% - 28px), 402px);
+      margin: 0 auto;
+      padding: 12px 14px;
+      border: 1px solid #f0c6cb;
+      border-radius: var(--radius);
+      background: var(--danger-bg);
+      color: var(--danger);
+      font-size: 13px;
+      font-weight: 800;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(8px);
+      transition: opacity 0.16s ease, transform 0.16s ease;
+    }
+
+    .toast.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 430px) {
+      .phone {
+        width: 100%;
+        box-shadow: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="phone">
+    <header class="topbar">
+      <div class="topbar__title">
+        <strong>青葉台ヘアケアサロン</strong>
+        <span>予約受付</span>
+      </div>
+      <button class="topbar__close" type="button" aria-label="閉じる">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M7 7l10 10M17 7L7 17" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </header>
+
+    <section class="screen is-active" data-screen="home">
+      <div class="content">
+        <article class="hero">
+          <div class="hero__visual">
+            <span class="hero__tag">LINEからのご予約</span>
+            <h1>ご希望の日時でご来店予約</h1>
+            <p class="hero__lead">空いている日時から、そのまま予約をお取りいただけます。</p>
+          </div>
+          <div class="hero__body">
+            <ul class="service-card">
+              <li>
+                <span>予約内容</span>
+                <strong>髪質カウンセリング</strong>
+              </li>
+              <li>
+                <span>所要時間</span>
+                <strong>45分</strong>
+              </li>
+              <li>
+                <span>場所</span>
+                <strong>青葉台駅 徒歩3分</strong>
+              </li>
+            </ul>
+          </div>
+        </article>
+      </div>
+      <div class="fixed-action">
+        <button class="primary" type="button" data-action="start">空き時間を見る</button>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="loading">
+      <div class="loading" role="status" aria-live="polite">
+        <div>
+          <div class="spinner"></div>
+          <h2>空き時間を確認しています</h2>
+          <p>現在受付できる日時を読み込んでいます</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="slots">
+      <div class="content">
+        <div class="step" aria-label="予約ステップ">
+          <div class="step__item is-current"><span class="step__dot">1</span><span>日時</span></div>
+          <div class="step__item"><span class="step__dot">2</span><span>入力</span></div>
+          <div class="step__item"><span class="step__dot">3</span><span>完了</span></div>
+        </div>
+
+        <button class="text-button" type="button" data-action="home">戻る</button>
+        <h2 class="page-title">ご来店日時をお選びください</h2>
+        <div class="notice">×の時間はすでに予約が入っています</div>
+
+        <div class="week-nav" aria-label="表示期間の切り替え">
+          <button class="week-nav__button" type="button" data-action="prevWeek" id="prevWeekButton">前の週</button>
+          <div class="week-nav__range" id="weekRange">表示期間</div>
+          <button class="week-nav__button" type="button" data-action="nextWeek" id="nextWeekButton">次の週</button>
+        </div>
+
+        <section class="availability-card" aria-label="空き状況一覧">
+          <div class="availability-card__head">
+            <div>
+              <strong id="slotHeading">直近1週間の空き時間</strong>
+              <span>ご都合のよい○をタップしてください</span>
+            </div>
+            <div class="availability-legend">
+              <div>○ 空き</div>
+              <div>× 予約済み</div>
+            </div>
+          </div>
+          <div class="availability-grid" id="availabilityGrid"></div>
+        </section>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="form">
+      <div class="content">
+        <div class="step" aria-label="予約ステップ">
+          <div class="step__item is-done"><span class="step__dot">1</span><span>日時</span></div>
+          <div class="step__item is-current"><span class="step__dot">2</span><span>入力</span></div>
+          <div class="step__item"><span class="step__dot">3</span><span>完了</span></div>
+        </div>
+
+        <h2 class="page-title">お客様情報の入力</h2>
+
+        <form class="form-card" id="reservationForm" novalidate>
+          <div class="selected">
+            <div>
+              <span>選択日時</span>
+              <strong id="selectedDateTime">未選択</strong>
+            </div>
+            <button class="text-button" type="button" data-action="backToSlots">変更</button>
+          </div>
+
+          <div class="fields">
+            <div class="field">
+              <label for="guestName">お名前</label>
+              <input id="guestName" name="guestName" type="text" autocomplete="name" placeholder="例）山田 花子" required>
+            </div>
+            <div class="field">
+              <label for="guestPhone">電話番号</label>
+              <input id="guestPhone" name="guestPhone" type="tel" autocomplete="tel" inputmode="tel" placeholder="例）09012345678" required>
+            </div>
+            <div class="field">
+              <label for="guestEmail">メールアドレス</label>
+              <input id="guestEmail" name="guestEmail" type="email" autocomplete="email" inputmode="email" placeholder="例）sample@example.com" required>
+            </div>
+            <div class="field">
+              <label for="guestMemo">ご相談内容</label>
+              <textarea id="guestMemo" name="guestMemo" placeholder="髪のお悩みや当日相談したい内容があればご記入ください"></textarea>
+            </div>
+          </div>
+
+          <div class="confirming" id="submitLoading" role="status" aria-live="polite">
+            <span class="mini-spinner"></span>
+            <span>選択した日時の空きを確認しています</span>
+          </div>
+        </form>
+      </div>
+      <div class="fixed-action">
+        <button class="primary" type="submit" form="reservationForm">この内容で予約する</button>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="complete">
+      <div class="content">
+        <div class="step" aria-label="予約ステップ">
+          <div class="step__item is-done"><span class="step__dot">1</span><span>日時</span></div>
+          <div class="step__item is-done"><span class="step__dot">2</span><span>入力</span></div>
+          <div class="step__item is-current"><span class="step__dot">3</span><span>完了</span></div>
+        </div>
+
+        <article class="complete-card">
+          <div class="complete-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M5 12.5l4.2 4.2L19.5 6.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <h2>ご予約ありがとうございます</h2>
+          <dl class="complete-summary">
+            <div>
+              <dt>日時</dt>
+              <dd id="completeDateTime">未選択</dd>
+            </div>
+            <div>
+              <dt>お名前</dt>
+              <dd id="completeName">未入力</dd>
+            </div>
+            <div>
+              <dt>連絡先</dt>
+              <dd id="completeContact">未入力</dd>
+            </div>
+          </dl>
+        </article>
+      </div>
+      <div class="fixed-action">
+        <button class="secondary" type="button" data-action="restart">別の日時を予約する</button>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="alert"></div>
+
+  <script>
+    const screens = Array.from(document.querySelectorAll("[data-screen]"));
+    const availabilityGrid = document.getElementById("availabilityGrid");
+    const slotHeading = document.getElementById("slotHeading");
+    const weekRange = document.getElementById("weekRange");
+    const prevWeekButton = document.getElementById("prevWeekButton");
+    const selectedDateTime = document.getElementById("selectedDateTime");
+    const completeDateTime = document.getElementById("completeDateTime");
+    const completeName = document.getElementById("completeName");
+    const completeContact = document.getElementById("completeContact");
+    const reservationForm = document.getElementById("reservationForm");
+    const submitLoading = document.getElementById("submitLoading");
+    const toast = document.getElementById("toast");
+
+    const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
+    const slotTimes = ["10:00", "10:30", "11:00", "13:00", "13:30", "14:00", "15:30", "16:00"];
+    const bookedPattern = [
+      ["10:30", "14:00"],
+      ["11:00", "13:00", "16:00"],
+      ["10:00", "15:30"],
+      ["13:30"],
+      ["10:00", "10:30", "14:00", "16:00"],
+      ["11:00", "13:00", "13:30"],
+      ["10:30", "15:30", "16:00"]
+    ];
+
+    let dates = [];
+    let weekOffset = 0;
+    let selectedSlot = null;
+    let toastTimer = null;
+
+    function showScreen(name) {
+      screens.forEach((screen) => {
+        screen.classList.toggle("is-active", screen.dataset.screen === name);
+      });
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function makeDates(offset = 0) {
+      const base = new Date();
+      base.setHours(0, 0, 0, 0);
+      base.setDate(base.getDate() + offset * 7);
+      return Array.from({ length: 7 }, (_, index) => {
+        const date = new Date(base);
+        date.setDate(base.getDate() + index + 1);
+        return {
+          date,
+          label: `${date.getMonth() + 1}/${date.getDate()}`,
+          booked: bookedPattern[(index + offset) % bookedPattern.length]
+        };
+      });
+    }
+
+    function formatFullDate(date) {
+      return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日（${weekdays[date.getDay()]}）`;
+    }
+
+    function getAvailableCount(dateItem) {
+      return slotTimes.filter((time) => !dateItem.booked.includes(time)).length;
+    }
+
+    function renderAvailabilityGrid() {
+      availabilityGrid.innerHTML = "";
+      slotHeading.textContent = `${dates[0].label}〜${dates[dates.length - 1].label} の空き状況`;
+      weekRange.textContent = `${dates[0].label}〜${dates[dates.length - 1].label}`;
+      prevWeekButton.disabled = weekOffset === 0;
+
+      const topLeft = document.createElement("div");
+      topLeft.className = "availability-cell is-head";
+      topLeft.textContent = "時間";
+      availabilityGrid.appendChild(topLeft);
+
+      dates.forEach((dateItem) => {
+        const dayCell = document.createElement("div");
+        dayCell.className = "availability-cell is-head";
+        dayCell.innerHTML = `<span>${dateItem.label}</span><small>${weekdays[dateItem.date.getDay()]}</small>`;
+        availabilityGrid.appendChild(dayCell);
+      });
+
+      slotTimes.forEach((time) => {
+        const timeCell = document.createElement("div");
+        timeCell.className = "availability-cell is-time";
+        timeCell.textContent = time;
+        availabilityGrid.appendChild(timeCell);
+
+        dates.forEach((dateItem) => {
+          const isBooked = dateItem.booked.includes(time);
+          const cell = document.createElement("div");
+          cell.className = "availability-cell";
+
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = `availability-button ${isBooked ? "is-booked" : "is-open"}`;
+          button.textContent = isBooked ? "×" : "○";
+          button.setAttribute("aria-label", `${formatFullDate(dateItem.date)} ${time} ${isBooked ? "予約済み" : "を選択"}`);
+
+          if (isBooked) {
+            button.disabled = true;
+          } else {
+            button.addEventListener("click", () => selectSlot(dateItem.date, time));
+          }
+
+          cell.appendChild(button);
+          availabilityGrid.appendChild(cell);
+        });
+      });
+    }
+
+    function switchWeek(direction) {
+      weekOffset = Math.max(0, weekOffset + direction);
+      dates = makeDates(weekOffset);
+      renderAvailabilityGrid();
+    }
+
+    function selectSlot(date, time) {
+      selectedSlot = { date, time };
+      selectedDateTime.textContent = `${formatFullDate(date)} ${time}`;
+      showScreen("form");
+    }
+
+    function startAvailabilityLoad() {
+      showScreen("loading");
+      window.setTimeout(() => {
+        weekOffset = 0;
+        dates = makeDates(weekOffset);
+        renderAvailabilityGrid();
+        showScreen("slots");
+      }, 1200);
+    }
+
+    function showToast(message) {
+      window.clearTimeout(toastTimer);
+      toast.textContent = message;
+      toast.classList.add("is-visible");
+      toastTimer = window.setTimeout(() => {
+        toast.classList.remove("is-visible");
+      }, 2400);
+    }
+
+    function resetForm() {
+      selectedSlot = null;
+      reservationForm.reset();
+      submitLoading.classList.remove("is-visible");
+      selectedDateTime.textContent = "未選択";
+      completeDateTime.textContent = "未選択";
+      completeName.textContent = "未入力";
+      completeContact.textContent = "未入力";
+    }
+
+    document.addEventListener("click", (event) => {
+      const action = event.target.closest("[data-action]")?.dataset.action;
+      if (!action) return;
+
+      if (action === "start") startAvailabilityLoad();
+      if (action === "home") showScreen("home");
+      if (action === "backToSlots") showScreen("slots");
+      if (action === "prevWeek") switchWeek(-1);
+      if (action === "nextWeek") switchWeek(1);
+      if (action === "restart") {
+        resetForm();
+        showScreen("home");
+      }
+    });
+
+    reservationForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+
+      if (!selectedSlot) {
+        showToast("日時を選択してください");
+        showScreen("slots");
+        return;
+      }
+
+      if (!reservationForm.checkValidity()) {
+        showToast("必須項目を入力してください");
+        reservationForm.reportValidity();
+        return;
+      }
+
+      const submitButton = document.querySelector("[form='reservationForm']");
+      submitLoading.classList.add("is-visible");
+      submitButton.disabled = true;
+
+      window.setTimeout(() => {
+        const formData = new FormData(reservationForm);
+        completeDateTime.textContent = `${formatFullDate(selectedSlot.date)} ${selectedSlot.time}`;
+        completeName.textContent = formData.get("guestName") || "未入力";
+        completeContact.textContent = `${formData.get("guestPhone")} / ${formData.get("guestEmail")}`;
+        submitLoading.classList.remove("is-visible");
+        submitButton.disabled = false;
+        showScreen("complete");
+      }, 900);
+    });
+  </script>
+</body>
+</html>
