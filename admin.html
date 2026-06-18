@@ -400,10 +400,29 @@
 
     .menu-actions {
       display: flex;
+      align-items: center;
       justify-content: flex-end;
       gap: 8px;
       margin-bottom: 12px;
       flex-wrap: wrap;
+    }
+
+    .option-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 38px;
+      margin-right: auto;
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .option-toggle input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--line);
     }
 
     .menu-input {
@@ -697,6 +716,11 @@
 
       <section class="panel" data-section="menus" hidden>
         <div class="menu-actions">
+          <label class="option-toggle">
+            <input type="checkbox" id="multipleMenusToggle">
+            複数メニュー
+          </label>
+          <button class="button" type="button" id="addMenuButton" hidden>メニュー追加</button>
           <button class="button button--primary" type="button" id="saveMenuButton">保存</button>
         </div>
         <table>
@@ -707,6 +731,7 @@
               <th>料金</th>
               <th>説明</th>
               <th>表示</th>
+              <th id="menuOperationHead" hidden>操作</th>
             </tr>
           </thead>
           <tbody id="menuRows"></tbody>
@@ -745,13 +770,17 @@
       var weekOffset = 0;
       var toastTimer = null;
       var cancelTargetId = '';
-      var menuSetting = {
-        name: '60分コース',
-        durationMinutes: 60,
-        price: 6600,
-        description: 'ご相談内容に合わせてご案内します。',
-        enabled: true
-      };
+      var multipleMenusEnabled = false;
+      var menus = [
+        {
+          id: 'course_60',
+          name: '60分コース',
+          durationMinutes: 60,
+          price: 6600,
+          description: 'ご相談内容に合わせてご案内します。',
+          enabled: true
+        }
+      ];
 
       var reservations = [
         reservation(0, '10:00', '60分コース', 60, '山田 花子', '090-1234-5678', 'hanako@example.com', '当日支払い', 6600, '確定'),
@@ -792,6 +821,8 @@
         document.getElementById('closeCancelButton').addEventListener('click', closeCancelModal);
         document.getElementById('confirmCancelButton').addEventListener('click', confirmCancel);
         document.getElementById('saveMenuButton').addEventListener('click', saveMenuSetting);
+        document.getElementById('addMenuButton').addEventListener('click', addMenu);
+        document.getElementById('multipleMenusToggle').addEventListener('change', toggleMultipleMenus);
         document.getElementById('cancelModal').addEventListener('click', function (event) {
           if (event.target.id === 'cancelModal') closeCancelModal();
         });
@@ -845,7 +876,8 @@
           if (status === 'wait' && item.status !== '決済確認') return false;
           if (date && item.date !== date) return false;
           if (query) {
-            var target = [item.id, item.name, item.phone, item.email, menuSetting.name].join(' ').toLowerCase();
+            var menu = getReservationMenu(item);
+            var target = [item.id, item.name, item.phone, item.email, menu.name].join(' ').toLowerCase();
             if (target.indexOf(query) < 0) return false;
           }
           return true;
@@ -858,16 +890,17 @@
         }
 
         tbody.innerHTML = rows.map(function (item) {
+          var menu = getReservationMenu(item);
           var wait = item.status === '決済確認';
           var paymentClass = item.payment === '当日支払い' ? ' payment--onsite' : '';
           return '<tr>'
             + '<td>' + escapeHtml(item.id) + '</td>'
             + '<td>' + escapeHtml(formatDisplayDate(parseDateKey(item.date))) + '</td>'
             + '<td>' + escapeHtml(item.time) + '</td>'
-            + '<td>' + escapeHtml(menuSetting.name) + '<br><small>' + menuSetting.durationMinutes + '分</small></td>'
+            + '<td>' + escapeHtml(menu.name) + '<br><small>' + menu.durationMinutes + '分</small></td>'
             + '<td>' + escapeHtml(item.name) + '</td>'
             + '<td>' + escapeHtml(item.phone) + '<br><small>' + escapeHtml(item.email) + '</small></td>'
-            + '<td><span class="payment' + paymentClass + '">' + escapeHtml(item.payment) + '</span>' + (menuSetting.price ? '<br><small>' + menuSetting.price.toLocaleString() + '円</small>' : '') + '</td>'
+            + '<td><span class="payment' + paymentClass + '">' + escapeHtml(item.payment) + '</span>' + (menu.price ? '<br><small>' + menu.price.toLocaleString() + '円</small>' : '') + '</td>'
             + '<td><span class="status ' + (wait ? 'status--wait' : '') + '">' + escapeHtml(item.status) + '</span></td>'
             + '<td><button class="button button--danger" type="button" data-cancel="' + escapeHtml(item.id) + '">キャンセル</button></td>'
             + '</tr>';
@@ -888,7 +921,7 @@
         var end = dates[dates.length - 1];
 
         document.getElementById('weekTitle').textContent = formatShortDate(start) + '〜' + formatShortDate(end) + ' の空き状況';
-        document.getElementById('weekCaption').textContent = menuSetting.name + ' / ' + menuSetting.durationMinutes + '分';
+        document.getElementById('weekCaption').textContent = getAvailabilityCaption();
         document.getElementById('prevWeekButton').disabled = weekOffset === 0;
 
         var grid = document.getElementById('weekGrid');
@@ -914,10 +947,11 @@
         var target = reservations.find(function (item) { return item.id === reservationId; });
         if (!target) return;
         cancelTargetId = reservationId;
+        var menu = getReservationMenu(target);
         document.getElementById('cancelDetail').innerHTML = '<div><span>予約番号</span><strong>' + escapeHtml(target.id) + '</strong></div>'
           + '<div><span>来店日時</span><strong>' + escapeHtml(formatDisplayDate(parseDateKey(target.date)) + ' ' + target.time) + '</strong></div>'
           + '<div><span>お客様</span><strong>' + escapeHtml(target.name) + '</strong></div>'
-          + '<div><span>メニュー</span><strong>' + escapeHtml(menuSetting.name) + '</strong></div>';
+          + '<div><span>メニュー</span><strong>' + escapeHtml(menu.name) + '</strong></div>';
         document.getElementById('cancelModal').classList.add('is-visible');
       }
 
@@ -955,35 +989,127 @@
       }
 
       function renderMenuSetting() {
-        document.getElementById('menuRows').innerHTML = '<tr>'
-          + '<td><input class="menu-input" id="menuNameInput" value="' + escapeAttr(menuSetting.name) + '"></td>'
-          + '<td><input class="menu-input" id="menuDurationInput" type="number" min="1" value="' + escapeAttr(menuSetting.durationMinutes) + '"></td>'
-          + '<td><input class="menu-input" id="menuPriceInput" type="number" min="0" value="' + escapeAttr(menuSetting.price) + '"></td>'
-          + '<td><textarea class="menu-input" id="menuDescriptionInput">' + escapeHtml(menuSetting.description) + '</textarea></td>'
-          + '<td><select class="menu-input" id="menuEnabledInput"><option value="true" ' + (menuSetting.enabled === false ? '' : 'selected') + '>表示</option><option value="false" ' + (menuSetting.enabled === false ? 'selected' : '') + '>非表示</option></select></td>'
-          + '</tr>';
+        document.getElementById('multipleMenusToggle').checked = multipleMenusEnabled;
+        document.getElementById('addMenuButton').hidden = !multipleMenusEnabled;
+        document.getElementById('menuOperationHead').hidden = !multipleMenusEnabled;
+
+        var visibleMenus = multipleMenusEnabled ? menus : [getPrimaryMenu()];
+        document.getElementById('menuRows').innerHTML = visibleMenus.map(function (menu, index) {
+          return '<tr class="menu-row" data-index="' + index + '">'
+            + '<td><input class="menu-input" data-field="name" value="' + escapeAttr(menu.name) + '"></td>'
+            + '<td><input class="menu-input" data-field="durationMinutes" type="number" min="1" value="' + escapeAttr(menu.durationMinutes) + '"></td>'
+            + '<td><input class="menu-input" data-field="price" type="number" min="0" value="' + escapeAttr(menu.price) + '"></td>'
+            + '<td><textarea class="menu-input" data-field="description">' + escapeHtml(menu.description || '') + '</textarea></td>'
+            + '<td><select class="menu-input" data-field="enabled"><option value="true" ' + (menu.enabled === false ? '' : 'selected') + '>表示</option><option value="false" ' + (menu.enabled === false ? 'selected' : '') + '>非表示</option></select></td>'
+            + (multipleMenusEnabled ? '<td><button class="button button--danger" type="button" data-delete-menu="' + index + '">削除</button></td>' : '')
+            + '</tr>';
+        }).join('');
+
+        document.querySelectorAll('[data-delete-menu]').forEach(function (button) {
+          button.addEventListener('click', function () {
+            if (menus.length <= 1) {
+              showToast('メニューは1件以上必要です');
+              return;
+            }
+            menus.splice(parseInt(button.dataset.deleteMenu, 10), 1);
+            renderAll();
+          });
+        });
       }
 
       function saveMenuSetting() {
-        var nextName = document.getElementById('menuNameInput').value.trim();
-        var nextDuration = parseInt(document.getElementById('menuDurationInput').value || '0', 10);
-        if (!nextName || nextDuration <= 0) {
-          showToast('メニュー名と所要時間を入力してください');
+        var nextMenus = collectMenus();
+        if (!nextMenus.length) {
+          showToast('保存できるメニューがありません');
           return;
         }
-
-        menuSetting = {
-          name: nextName,
-          durationMinutes: nextDuration,
-          price: parseInt(document.getElementById('menuPriceInput').value || '0', 10),
-          description: document.getElementById('menuDescriptionInput').value.trim(),
-          enabled: document.getElementById('menuEnabledInput').value === 'true'
-        };
+        menus = multipleMenusEnabled ? nextMenus : [nextMenus[0]];
 
         simulateSync('メニュー設定を保存しています', function () {
           renderAll();
           showToast('メニュー設定を保存しました');
         });
+      }
+
+      function toggleMultipleMenus(event) {
+        multipleMenusEnabled = event.target.checked;
+        if (multipleMenusEnabled && menus.length === 1) {
+          menus.push({
+            id: 'course_90',
+            name: '90分コース',
+            durationMinutes: 90,
+            price: 9900,
+            description: '長めのご相談に対応します。',
+            enabled: true
+          });
+        }
+        renderAll();
+        showToast(multipleMenusEnabled ? '複数メニューを有効にしました' : '単一メニューに切り替えました');
+      }
+
+      function addMenu() {
+        menus = collectMenus();
+        menus.push({
+          id: 'menu_' + (menus.length + 1),
+          name: '新規コース',
+          durationMinutes: 60,
+          price: 0,
+          description: '',
+          enabled: true
+        });
+        renderAll();
+      }
+
+      function collectMenus() {
+        return Array.from(document.querySelectorAll('#menuRows .menu-row')).map(function (row, index) {
+          var item = {
+            id: menus[index] && menus[index].id ? menus[index].id : 'menu_' + (index + 1)
+          };
+          row.querySelectorAll('[data-field]').forEach(function (input) {
+            var field = input.dataset.field;
+            if (field === 'durationMinutes' || field === 'price') {
+              item[field] = parseInt(input.value || '0', 10);
+            } else if (field === 'enabled') {
+              item[field] = input.value === 'true';
+            } else {
+              item[field] = input.value.trim();
+            }
+          });
+          return item;
+        }).filter(function (menu) {
+          return menu.name && menu.durationMinutes > 0;
+        });
+      }
+
+      function getPrimaryMenu() {
+        return menus[0] || {
+          id: 'course_60',
+          name: '60分コース',
+          durationMinutes: 60,
+          price: 6600,
+          description: '',
+          enabled: true
+        };
+      }
+
+      function getReservationMenu(item) {
+        if (multipleMenusEnabled && item.menuId) {
+          var found = menus.find(function (menu) { return menu.id === item.menuId; });
+          if (found) return found;
+        }
+        return getPrimaryMenu();
+      }
+
+      function getAvailabilityCaption() {
+        if (!multipleMenusEnabled) {
+          var menu = getPrimaryMenu();
+          return menu.name + ' / ' + menu.durationMinutes + '分';
+        }
+        return menus.filter(function (menu) {
+          return menu.enabled !== false;
+        }).map(function (menu) {
+          return menu.name + ' / ' + menu.durationMinutes + '分';
+        }).join('、');
       }
 
       function simulateSync(message, callback) {
